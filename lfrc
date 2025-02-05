@@ -95,6 +95,12 @@ cmd create_shortcut ${{
 	ln -s "$f" "$ans"
 }}
 
+cmd create_relative_shortcut ${{
+	printf "link name: "
+	read ans
+	ln -s "$f" "$ans"
+}}
+
 
 cmd setwallpaper ${{
 	feh  --bg-center --bg-fill --no-fehbg "$f"
