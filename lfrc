@@ -311,6 +311,7 @@ map bg setwallpaper
 
 
 map sl create_shortcut
+map sp sudo paste
 
 # Movement
 map ch cd ~
