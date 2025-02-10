@@ -95,11 +95,13 @@ cmd create_shortcut ${{
 	ln -s "$f" "$ans"
 }}
 
+
 cmd create_relative_shortcut ${{
-	printf "link name: "
+	printf "Link name: "
 	read ans
-	ln -s "$f" "$ans"
+	ln -s "$(realpath --relative-to="$PWD" "$f")" "$PWD/$ans"
 }}
+
 
 
 cmd setwallpaper ${{
@@ -337,6 +339,7 @@ map bg setwallpaper
 
 
 map sl create_shortcut
+map sr create_relative_shortcut
 map sp sudo paste
 
 # Movement
