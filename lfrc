@@ -344,6 +344,7 @@ map sp sudo paste
 
 # Movement
 map ch cd ~
+
 map cc cd ~/.config
 map ck cd ~/.config/kanata
 map cD cd ~/Documents
