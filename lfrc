@@ -75,19 +75,7 @@ cmd paste_clipboard ${{
 	fish -c "echo -n \"$f\" | c"
 }}
 
-# Custom Functions
-# Custom Functions
-cmd mkdir ${{
-  printf "Directory Name: "
-  read ans
-  mkdir "$ans"
-}}
 
-cmd mkfile ${{
-  printf "File Name: "
-  read ans
-  $EDITOR "$ans"
-}}
 
 cmd create_shortcut ${{
 	printf "link name: "
@@ -138,18 +126,21 @@ cmd trash ${{
 }}
 
 
-cmd open &{{
+cmd open_custom &{{
     # Determine the MIME type of the file
     mime_type=$(file --mime-type -Lb "$f")
 
     # Check if the file is a text file
+	notify-send "It's in mime_type: ($f) in ($mime_type)"
     case "$mime_type" in
         text/* | inode/x-empty)
             # Send the file to nvim using lf-remote if it is a text file
+			notify-send "lf remote opening with nvim"
             lf -remote "send $id \$nvim \"\$fx\""
             ;;
         *)
             # Use xdg-open for non-text files
+			notify-send "xdg opening"
             xdg-open "$f"
             ;;
     esac
@@ -161,6 +152,31 @@ cmd open3 &{{
 		*) xdg-open "$f"
 	esac
 }}
+
+
+cmd search_for %{{
+    lf -remote "send $id push /$1<enter>"
+}}
+
+# Custom Functions
+cmd mkdir ${{
+  printf "Directory Name: "
+  read ans
+  mkdir "$ans"
+}}
+
+# Custom Functions
+cmd mkfile ${{
+  printf "File Name: "
+  read ans
+  touch "$ans"
+  # lf -remote "send $id open \$ans"
+  # xdg-open "$ans"
+  lf -remote "send $id search_for \"$ans\""
+  # lf -remote "send $id select \"\$ans\""
+  # $EDITOR "$ans"
+}}
+
 
 cmd on-select &{{
     lf -remote "send $id set statfmt \"$(eza -ld --color=always "$f")\""
@@ -315,7 +331,8 @@ map k down
 map i up
 
 # Map 'l' to move right/enter a directory (originally 'l')
-map l open
+map l open_custom
+map right open_custom
 
 
 
@@ -345,25 +362,24 @@ map sp sudo paste
 # Movement
 map ch cd ~
 
-map cc cd ~/.config
-map ck cd ~/.config/kanata
 map cD cd ~/Documents
-map ce cd ~/.config/eww
-map ew cd ~/.config/eww
 map cd cd ~/Downloads
 map cp cd ~/Pictures
 map cm cd ~/Music
-#map gr cd ~/repos
 map cv cd ~/Videos
 map cs cd ~/.local/bin
 map ct cd ~/.local/share/Trash/files
 map cj cd /home/francois/MainPython_Virtual_Environment/projects/polyfem2d
 
-map cr cd ~/.config/rofi/applets/bin
 
-map cl cd ~/.config/lf
-map cP cd ~/.config/polybar.old
+map cc cd ~/.config
+map ce cd ~/.config/eww
+map ck cd ~/.config/kanata
 map cH cd ~/.config/hypr
+map cl cd ~/.config/lf
+map cn cd ~/.config/nvim
+map cP cd ~/.config/polybar.old
+map cr cd ~/.config/rofi/applets/bin
 map cw cd ~/.config/waybar
 
 
