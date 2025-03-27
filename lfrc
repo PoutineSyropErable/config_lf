@@ -126,16 +126,16 @@ cmd trash ${{
 }}
 
 
-cmd open_custom &{{
+cmd open &{{
     # Determine the MIME type of the file
     mime_type=$(file --mime-type -Lb "$f")
 
     # Check if the file is a text file
-	notify-send "It's in mime_type: ($f) in ($mime_type)"
+	# notify-send "It's in mime_type: ($f) in ($mime_type)"
     case "$mime_type" in
         text/* | inode/x-empty)
             # Send the file to nvim using lf-remote if it is a text file
-			notify-send "lf remote opening with nvim"
+			notify-send -t 2000 "lf remote opening with nvim"
             lf -remote "send $id \$nvim \"\$fx\""
             ;;
         *)
@@ -331,8 +331,8 @@ map k down
 map i up
 
 # Map 'l' to move right/enter a directory (originally 'l')
-map l open_custom
-map right open_custom
+map l open
+map <right> open
 
 
 
