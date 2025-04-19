@@ -308,19 +308,19 @@ cmd change_permissions ${{
 
 
 cmd open_in_nvim ${{
-	session_name="$1"
-	script_file="$HOME/.config/zsh/pythonHelperScript/send_to_nvim.py"
+    session_name="$1"
+    script_file="$HOME/.config/zsh/pythonHelperScript/open_remote_nvim.py"
 
-	files=$(printf "$fx" | tr '\n' ' ')
-	# If session_name is empty, don't pass --name argument
+    # Prepare the files
+    files=$(printf "$fx" | tr '\n' ' ')
+
+    # If session_name is empty, don't pass --name argument
     if [ -z "$session_name" ]; then
         # Run the script without the --name argument
-        # "$script_file" $files
-        zsh -c "$script_file $files"
+        "$script_file" $files
     else
         # Run the script with the --name argument
-        # "$script_file" --name="$session_name" $files
-		zsh -c "$script_file --name=\"$session_name\" $files"
+        "$script_file" --name="$session_name" $files
     fi
 }}
 
@@ -332,14 +332,12 @@ cmd send_to_nvim ${{
     # If session_name is empty, don't pass --name argument
     if [ -z "$session_name" ]; then
         # Run the script without the --name argument
-        zsh -c "$script_file $files"
+        "$script_file" $files
     else
         # Run the script with the --name argument
-        # "$script_file" --name="$session_name" $files
-		zsh -c "$script_file --name=\"$session_name\" $files"
+        "$script_file" --name="$session_name" $files
     fi
 }}
-
 
 
 
@@ -455,6 +453,10 @@ map o3 open_in_nvim "3"
 
 
 # Keybinding for `svd` - send files to Neovim with the default session (no session passed)
+map sd send_to_nvim ""
+map s1 send_to_nvim "1"
+map s2 send_to_nvim "2"
+map s3 send_to_nvim "3"
 map osd send_to_nvim ""
 map os1 send_to_nvim "1"
 map os2 send_to_nvim "2"
