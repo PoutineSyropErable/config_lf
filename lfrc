@@ -135,12 +135,12 @@ cmd open &{{
     case "$mime_type" in
         text/* | inode/x-empty)
             # Send the file to nvim using lf-remote if it is a text file
-			notify-send -t 2000 "lf remote opening with nvim"
+			# notify-send -t 2000 "lf remote opening with nvim"
             lf -remote "send $id \$nvim \"\$fx\""
             ;;
         *)
             # Use xdg-open for non-text files
-			notify-send "xdg opening"
+			# notify-send "xdg opening"
             xdg-open "$f"
             ;;
     esac
@@ -305,6 +305,44 @@ cmd change_permissions ${{
 }}
 
 
+
+
+cmd open_in_nvim ${{
+	session_name="$1"
+	script_file="$HOME/.config/zsh/pythonHelperScript/send_to_nvim.py"
+
+	files=$(printf "$fx" | tr '\n' ' ')
+	# If session_name is empty, don't pass --name argument
+    if [ -z "$session_name" ]; then
+        # Run the script without the --name argument
+        # "$script_file" $files
+        zsh -c "$script_file $files"
+    else
+        # Run the script with the --name argument
+        # "$script_file" --name="$session_name" $files
+		zsh -c "$script_file --name=\"$session_name\" $files"
+    fi
+}}
+
+cmd send_to_nvim ${{
+    script_file="$HOME/.config/zsh/pythonHelperScript/send_to_nvim.py"
+    session_name="$1"
+    files=$(printf "$fx" | tr '\n' ' ')  # Transform the file list into a space-separated string
+
+    # If session_name is empty, don't pass --name argument
+    if [ -z "$session_name" ]; then
+        # Run the script without the --name argument
+        zsh -c "$script_file $files"
+    else
+        # Run the script with the --name argument
+        # "$script_file" --name="$session_name" $files
+		zsh -c "$script_file --name=\"$session_name\" $files"
+    fi
+}}
+
+
+
+
 map Z push :z-jump<space>-I<space>
 map zb push :z-jump<space>-b<space>
 map zz push :z-jump<space>
@@ -386,6 +424,7 @@ map cw cd ~/.config/waybar
 cmd open_dir_nvim  ${{ 
     nvim .
 }}
+map eb !firefox "$f" &
 map ef !thunar "$f" &
 map cf !thunar "$f" &
 map ev open_dir_nvim
@@ -406,8 +445,25 @@ map ep change_permissions
 
 map on !nvim "$f"
 map oN !nvim "."
-map ov !codium "$f"
-map oV !codium "."
+
+# Keybinding for `rvd` - open files in Neovim with the default session (no session passed)
+map od open_in_nvim "" 
+# session name = 1, 2 or 3
+map o1 open_in_nvim "1"
+map o2 open_in_nvim "2"
+map o3 open_in_nvim "3"
+
+
+# Keybinding for `svd` - send files to Neovim with the default session (no session passed)
+map osd send_to_nvim ""
+map os1 send_to_nvim "1"
+map os2 send_to_nvim "2"
+map os3 send_to_nvim "3"
+
+
+
+map oc !codium "$f"
+map oc !codium "."
 map ow !dbus-send --session --dest=org.xfce.Thunar --type=method_call --print-reply --reply-timeout=5000 /org/xfce/FileManager org.xfce.FileManager.Open --string "$f" --string "other"
 map om !mpv "$f"
 
