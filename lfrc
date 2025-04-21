@@ -266,7 +266,9 @@ cmd toggle_exec ${{
   done
 }}
 
-cmd edit_config ${{ nvim ~/.lfrc  }}
+cmd edit_config ${{ 
+	nvim --cmd "autocmd VimEnter * CdHere" ~/.config/lf/lfrc
+	}}
 
 
 cmd change_permissions1 ${{
