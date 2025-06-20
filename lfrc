@@ -1,6 +1,6 @@
 # interpreter for shell commands
 set shell sh
-map <enter> shell fish
+map <enter> shell zsh
 #Need EZA ! For on select to properly show file info
 
 # set '-eu' options for shell commands
@@ -311,7 +311,7 @@ cmd change_permissions ${{
 
 cmd open_in_nvim ${{
     session_name="$1"
-    script_file="$HOME/.config/zsh/pythonHelperScript/open_remote_nvim.py"
+    script_file="$HOME/.config/nvim/scripts/pythonScripts/open_remote_nvim.py"
 
     # Prepare the files
     files=$(printf "$fx" | tr '\n' ' ')
@@ -327,7 +327,7 @@ cmd open_in_nvim ${{
 }}
 
 cmd send_to_nvim ${{
-    script_file="$HOME/.config/zsh/pythonHelperScript/send_to_nvim.py"
+    script_file="$HOME/.config/nvim/scripts/pythonScripts/send_to_nvim.py"
     session_name="$1"
     files=$(printf "$fx" | tr '\n' ' ')  # Transform the file list into a space-separated string
 
