@@ -1,6 +1,6 @@
 #!/bin/sh
 draw() {
-	bat --color=always ~/.config/lf/empty.txt &
+	# bat --color=always ~/.config/lf/empty.txt &
 	kitty +kitten icat --silent --stdin no --transfer-mode file --place "${w}x${h}@${x}x${y}" "$1" </dev/null >/dev/tty
 	exit 1
 }
