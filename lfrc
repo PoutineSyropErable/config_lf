@@ -30,13 +30,13 @@ set ratios 1:2:3
 # set info size:perm:time
 
 # Previewer and Cleaner settings
-# set previewer ctpv
-# set cleaner ctpvclear
-# &ctpv -s $id
-# &ctpvquit $id
+set previewer ctpv
+set cleaner ctpvclear
+&ctpv -s $id
+&ctpvquit $id
 
-set previewer ~/.config/lf/previewer.sh
-set cleaner ~/.config/lf/cleaner.sh
+# set previewer ~/.config/lf/previewer.sh
+# set cleaner ~/.config/lf/cleaner.sh
 
 
 # Basic Settings
@@ -136,7 +136,7 @@ cmd open &{{
     # Check if the file is a text file
 	# notify-send "It's in mime_type: ($f) in ($mime_type)"
     case "$mime_type" in
-        text/* | inode/x-empty)
+        text/* | inode/x-empty | application/json)
             # Send the file to nvim using lf-remote if it is a text file
 			# notify-send -t 2000 "lf remote opening with nvim"
             lf -remote "send $id \$nvim \"\$fx\""
@@ -224,16 +224,22 @@ cmd execute-selected ${{
         exit 1
     fi
 
-    # Check if the file is executable
-    if [ ! -x "$f" ]; then
-        echo "File '$f' is not executable" >&2
-        exit 1
-    fi
-	
 	#proccess e key bullshit
 	sleep 0.2
     # Execute the selected file
-    "$f" &
+	case "$f" in
+        *.py)
+            python3 "$f" &
+            ;;
+        *)
+            # Check if the file is executable
+            if [ ! -x "$f" ]; then
+                echo "File '$f' is not executable" >&2
+                exit 1
+            fi
+            "$f" &
+            ;;
+    esac
 }}
 
 
@@ -419,9 +425,11 @@ map ck cd ~/.config/kanata
 map cH cd ~/.config/hypr
 map cl cd ~/.config/lf
 map cn cd ~/.config/nvim
+map cV cd ~/.config/vim
 map cP cd ~/.config/polybar.old
 map cr cd ~/.config/rofi/applets/bin
 map cw cd ~/.config/waybar
+map cz cd ~/.config/zsh
 
 
 cmd open_dir_nvim  ${{ 
