@@ -158,27 +158,22 @@ cmd open &{{
     ext="${ext,,}"  # lowercase
 
     # First pass: check by extension
-    open_with_nvim=0
     for e in "${nvim_exts[@]}"; do
         if [ "$ext" = "$e" ]; then
-            open_with_nvim=1
-            break
+            lf -remote "send $id \$nvim \"\$fx\""
+            return
         fi
     done
 
-    if [ $open_with_nvim -eq 1 ]; then
+    # Second pass: check by MIME type
+    mime_type=$(file --mime-type -Lb "$f")
+    if [[ "$mime_type" == text/* ]] || [ "$mime_type" = "inode/x-empty" ] || [ "$mime_type" = "application/json" ]; then
         lf -remote "send $id \$nvim \"\$fx\""
+        return
     fi
 
-    # Second pass: check by MIME type if extension didn't match
-    if [ $open_with_nvim -eq 0 ]; then
-        mime_type=$(file --mime-type -Lb "$f")
-        if [[ "$mime_type" == text/* ]] || [ "$mime_type" = "inode/x-empty" ] || [ "$mime_type" = "application/json" ]; then
-            lf -remote "send $id \$nvim \"\$fx\""
-        else
-            xdg-open "$f"
-        fi
-    fi
+    # Fallback for everything else
+    xdg-open "$f"
 }}
 
 cmd open3 &{{
