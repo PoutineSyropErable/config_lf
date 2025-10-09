@@ -41,6 +41,7 @@ set cleaner ctpvclear
 
 # Basic Settings
 set hidden true
+set info time
 set ignorecase true
 set icons true
 
@@ -129,7 +130,7 @@ cmd trash ${{
 }}
 
 
-cmd open &{{
+cmd open_no_ext &{{
     # Determine the MIME type of the file
     mime_type=$(file --mime-type -Lb "$f")
 
@@ -147,6 +148,37 @@ cmd open &{{
             xdg-open "$f"
             ;;
     esac
+}}
+
+
+
+cmd open &{{
+    nvim_exts=("lua" "c" "asm" "py" "cpp" "h" "sh" "rs")  # add more if needed
+    ext="${f##*.}"
+    ext="${ext,,}"  # lowercase
+
+    # First pass: check by extension
+    open_with_nvim=0
+    for e in "${nvim_exts[@]}"; do
+        if [ "$ext" = "$e" ]; then
+            open_with_nvim=1
+            break
+        fi
+    done
+
+    if [ $open_with_nvim -eq 1 ]; then
+        lf -remote "send $id \$nvim \"\$fx\""
+    fi
+
+    # Second pass: check by MIME type if extension didn't match
+    if [ $open_with_nvim -eq 0 ]; then
+        mime_type=$(file --mime-type -Lb "$f")
+        if [[ "$mime_type" == text/* ]] || [ "$mime_type" = "inode/x-empty" ] || [ "$mime_type" = "application/json" ]; then
+            lf -remote "send $id \$nvim \"\$fx\""
+        else
+            xdg-open "$f"
+        fi
+    fi
 }}
 
 cmd open3 &{{
@@ -487,3 +519,14 @@ map oip !pinta "$f"
 
 map of !thunar "$f" &
 map mp !mpc_playsong.sh "$f"
+
+
+# === sorts 
+# reverse sorts
+# Toggle reverse sort order
+
+
+
+map sR set reverse!
+
+
