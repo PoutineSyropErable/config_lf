@@ -1,0 +1,7 @@
+file = /home/francois/.config/lf/lf.bash
+file = /home/francois/.config/lf/lf.fish
+file = /home/francois/.config/lf/lf.zsh
+The neovim files: /home/francois/.config/lf/lf.bash
+The neovim files: /home/francois/.config/lf/lf.fish
+The neovim files: /home/francois/.config/lf/lf.zsh
+The xdg-open files: 

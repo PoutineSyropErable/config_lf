@@ -116,18 +116,117 @@ cmd unarchive ${{
 
 # Trash bindings
 cmd trash ${{
-  files=$(printf "$fx" | tr '\n' ';')
-  while [ "$files" ]; do
-    file=${files%%;*}
 
-    trash put "$(basename "$file")"
-    if [ "$files" = "$file" ]; then
-      files=''
-    else
-      files="${files#*;}"
-    fi
-  done
+	files=$(printf "$fx" | tr '\n' ';')
+	# printf "" > trash_log.txt
+	while [ "$files" ]; do
+		file=${files%%;*}
+		# printf "$file" >> trash_log.txt
+
+		trash put "$(basename "$file")"
+		if [ "$files" = "$file" ]; then
+		files=''
+		else
+		files="${files#*;}"
+		fi
+	done
 }}
+
+
+cmd open &{{
+    nvim_exts=("lua" "c" "asm" "py" "cpp" "h" "sh" "rs")
+
+	rm open_log.txt 2>/dev/null
+	touch open_log.txt
+
+    nvim_files=()
+    xdg_files=()
+
+    for file in $fx; do
+        printf "file = %s\n" "$file" >> open_log.txt
+
+        ext="${file##*.}"
+        ext="${ext,,}"
+
+        opened=false
+
+        for e in "${nvim_exts[@]}"; do
+            if [ "$ext" = "$e" ]; then
+                nvim_files+=("$file")
+                opened=true
+                break
+            fi
+        done
+
+        if [ "$opened" = false ]; then
+            mime_type=$(file --mime-type -Lb "$file")
+            if [[ "$mime_type" == text/* ]] || [ "$mime_type" = "inode/x-empty" ] || [ "$mime_type" = "application/json" ]; then
+                nvim_files+=("$file")
+                opened=true
+            fi
+        fi
+
+        if [ "$opened" = false ]; then
+            xdg_files+=("$file")
+        fi
+    done
+
+	printf "The neovim files: %s\n" "${nvim_files[@]}" >> open_log.txt
+	printf "The xdg-open files: %s\n" "${xdg_files[@]}" >> open_log.txt
+
+
+    # Open all Neovim files at once
+    if [ ${#nvim_files[@]} -gt 0 ]; then
+		printf "$nvim ${nvim_files[*]}" >> open_log.txt
+        lf -remote "send $id \$nvim ${nvim_files[*]}"
+    fi
+
+
+    # Open all other files with xdg-open at once, in background
+    if [ ${#xdg_files[@]} -gt 0 ]; then
+        printf "xdg-open ${xdg_files[@]} &" >> open_log.txt
+        xdg-open "${xdg_files[@]}" &
+    fi
+}}
+
+
+
+
+
+cmd open_before &{{
+	nvim_exts=("lua" "c" "asm" "py" "cpp" "h" "sh" "rs")  # add more if needed
+	printf "" > open_log.txt
+
+
+	files=$(printf "$fx" | tr '\n' ';')
+	while [ "$files" ]; do
+		file=${files%%;*}
+		printf "0: file = $file\n" >>  open_log.txt
+		ext="${file##*.}"
+		printf "1: ext = $ext\n" >> open_log.txt
+		ext="${ext,,}"  # lowercase
+		printf "2: ext = $ext\n" >> open_log.txt
+
+		# First pass: check by extension
+		for e in "${nvim_exts[@]}"; do
+			if [ "$ext" = "$e" ]; then
+				lf -remote "send $id \$nvim \"\$file\""
+				return
+			fi
+		done
+
+		# Second pass: check by MIME type
+		mime_type=$(file --mime-type -Lb "$file")
+		if [[ "$mime_type" == text/* ]] || [ "$mime_type" = "inode/x-empty" ] || [ "$mime_type" = "application/json" ]; then
+			lf -remote "send $id \$nvim \"\$file\""
+			return
+		fi
+
+		# Fallback for everything else
+		xdg-open "$f"
+	done
+}}
+
 
 
 cmd open_no_ext &{{
@@ -151,40 +250,6 @@ cmd open_no_ext &{{
 				xdg-open "$f"
 				;;
 		esac
-	done
-}}
-
-
-
-cmd open &{{
-	nvim_exts=("lua" "c" "asm" "py" "cpp" "h" "sh" "rs")  # add more if needed
-
-	files=$(printf "$fx" | tr '\n' ';')
-	while [ "$files" ]; do
-		file=${files%%;*}
-		printf "1: ext = $ext\n"
-		ext="${file##*.}"
-		printf "1: ext = $ext\n"
-		ext="${ext,,}"  # lowercase
-		printf "2: ext = $ext\n"
-
-		# First pass: check by extension
-		for e in "${nvim_exts[@]}"; do
-			if [ "$ext" = "$e" ]; then
-				lf -remote "send $id \$nvim \"\$file\""
-				return
-			fi
-		done
-
-		# Second pass: check by MIME type
-		mime_type=$(file --mime-type -Lb "$file")
-		if [[ "$mime_type" == text/* ]] || [ "$mime_type" = "inode/x-empty" ] || [ "$mime_type" = "application/json" ]; then
-			lf -remote "send $id \$nvim \"\$file\""
-			return
-		fi
-
-		# Fallback for everything else
-		xdg-open "$f"
 	done
 }}
 
