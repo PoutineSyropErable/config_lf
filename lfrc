@@ -132,48 +132,60 @@ cmd trash ${{
 
 cmd open_no_ext &{{
     # Determine the MIME type of the file
-    mime_type=$(file --mime-type -Lb "$f")
+	files=$(printf "$fx" | tr '\n' ';')
+		while [ "$files" ]; do
+			file=${files%%;*}
+		mime_type=$(file --mime-type -Lb "$f")
 
-    # Check if the file is a text file
-	# notify-send "It's in mime_type: ($f) in ($mime_type)"
-    case "$mime_type" in
-        text/* | inode/x-empty | application/json)
-            # Send the file to nvim using lf-remote if it is a text file
-			# notify-send -t 2000 "lf remote opening with nvim"
-            lf -remote "send $id \$nvim \"\$fx\""
-            ;;
-        *)
-            # Use xdg-open for non-text files
-			# notify-send "xdg opening"
-            xdg-open "$f"
-            ;;
-    esac
+		# Check if the file is a text file
+		# notify-send "It's in mime_type: ($f) in ($mime_type)"
+		case "$mime_type" in
+			text/* | inode/x-empty | application/json)
+				# Send the file to nvim using lf-remote if it is a text file
+				# notify-send -t 2000 "lf remote opening with nvim"
+				lf -remote "send $id \$nvim \"\$fx\""
+				;;
+			*)
+				# Use xdg-open for non-text files
+				# notify-send "xdg opening"
+				xdg-open "$f"
+				;;
+		esac
+	done
 }}
 
 
 
 cmd open &{{
-    nvim_exts=("lua" "c" "asm" "py" "cpp" "h" "sh" "rs")  # add more if needed
-    ext="${f##*.}"
-    ext="${ext,,}"  # lowercase
+	nvim_exts=("lua" "c" "asm" "py" "cpp" "h" "sh" "rs")  # add more if needed
 
-    # First pass: check by extension
-    for e in "${nvim_exts[@]}"; do
-        if [ "$ext" = "$e" ]; then
-            lf -remote "send $id \$nvim \"\$fx\""
-            return
-        fi
-    done
+	files=$(printf "$fx" | tr '\n' ';')
+	while [ "$files" ]; do
+		file=${files%%;*}
+		printf "1: ext = $ext\n"
+		ext="${file##*.}"
+		printf "1: ext = $ext\n"
+		ext="${ext,,}"  # lowercase
+		printf "2: ext = $ext\n"
 
-    # Second pass: check by MIME type
-    mime_type=$(file --mime-type -Lb "$f")
-    if [[ "$mime_type" == text/* ]] || [ "$mime_type" = "inode/x-empty" ] || [ "$mime_type" = "application/json" ]; then
-        lf -remote "send $id \$nvim \"\$fx\""
-        return
-    fi
+		# First pass: check by extension
+		for e in "${nvim_exts[@]}"; do
+			if [ "$ext" = "$e" ]; then
+				lf -remote "send $id \$nvim \"\$file\""
+				return
+			fi
+		done
 
-    # Fallback for everything else
-    xdg-open "$f"
+		# Second pass: check by MIME type
+		mime_type=$(file --mime-type -Lb "$file")
+		if [[ "$mime_type" == text/* ]] || [ "$mime_type" = "inode/x-empty" ] || [ "$mime_type" = "application/json" ]; then
+			lf -remote "send $id \$nvim \"\$file\""
+			return
+		fi
+
+		# Fallback for everything else
+		xdg-open "$f"
+	done
 }}
 
 cmd open3 &{{
