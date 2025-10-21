@@ -133,17 +133,16 @@ cmd trash ${{
 }}
 
 
-cmd open &{{
+cmd open ${{
+	# printf "Open is being called\n" >> open_log.txt
     nvim_exts=("lua" "c" "asm" "py" "cpp" "h" "sh" "rs")
 
-	rm open_log.txt 2>/dev/null
-	touch open_log.txt
 
     nvim_files=()
     xdg_files=()
 
     for file in $fx; do
-        printf "file = %s\n" "$file" >> open_log.txt
+        # printf "file = %s\n" "$file" >> open_log.txt
 
         ext="${file##*.}"
         ext="${ext,,}"
@@ -171,22 +170,31 @@ cmd open &{{
         fi
     done
 
-	printf "The neovim files: %s\n" "${nvim_files[@]}" >> open_log.txt
-	printf "The xdg-open files: %s\n" "${xdg_files[@]}" >> open_log.txt
+	# printf "\nThe neovim files: %s\n" "${nvim_files[*]}" >> open_log.txt
+	# printf "The xdg-open files: %s\n\n" "${xdg_files[*]}" >> open_log.txt
 
 
     # Open all Neovim files at once
     if [ ${#nvim_files[@]} -gt 0 ]; then
-		printf "$nvim ${nvim_files[*]}" >> open_log.txt
-        lf -remote "send $id \$nvim ${nvim_files[*]}"
+		# printf "nvim ${nvim_files[*]}\n" >> open_log.txt
+
+		cmd="send $id \$nvim"
+		for f in "${nvim_files[@]}"; do
+			cmd="$cmd \"$f\""
+		done
+
+		lf -remote "$cmd"
     fi
 
 
-    # Open all other files with xdg-open at once, in background
-    if [ ${#xdg_files[@]} -gt 0 ]; then
-        printf "xdg-open ${xdg_files[@]} &" >> open_log.txt
-        xdg-open "${xdg_files[@]}" &
-    fi
+	# Open all xdg-open files individually in background
+	if [ ${#xdg_files[@]} -gt 0 ]; then
+		# printf "xdg-open files:\n" >> open_log.txt
+		for f in "${xdg_files[@]}"; do
+			# printf "xdg-open %s\n" "$f" >> open_log.txt
+			xdg-open "$f" &
+		done
+	fi
 }}
 
 
