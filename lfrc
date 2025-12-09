@@ -579,6 +579,7 @@ map o3 open_in_nvim "3"
 
 # Keybinding for `svd` - send files to Neovim with the default session (no session passed)
 map sd send_to_nvim ""
+map se send_to_nvim "Editor"
 map s1 send_to_nvim "1"
 map s2 send_to_nvim "2"
 map s3 send_to_nvim "3"
@@ -607,6 +608,12 @@ map mp !mpc_playsong.sh "$f"
 
 
 
-map sR set reverse!
 
 
+map sR   set reverse!
+map sa   :{{ set sortby atime; set info atime; }}
+map sc   :{{ set sortby ctime; set info ctime; }}
+map sx   :{{ set sortby ext; set info time; }}
+map sn   :{{ set sortby natural; set info time; }}
+map ss   :{{ set sortby size; set info size; }}
+map st   :{{ set sortby time; set info time; }}
