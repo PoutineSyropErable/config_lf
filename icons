@@ -173,7 +173,9 @@ fi             # FILE
 *.rproj         󰗆
 *.sol           󰡪
 *.pem           
-*.zig  
+*.zig  			
+*.cppm 			
+*.ixx 			
 
 # file names (vim-devicons) (case-insensitive not supported in lf)
 *gruntfile.coffee       
@@ -234,6 +236,8 @@ fi             # FILE
 *Gemfile                
 *Makefile               
 *CMakeLists.txt         
+
+*.clangd			
 
 # file patterns (vim-devicons) (patterns not supported in lf)
 # .*jquery.*\.js$         
