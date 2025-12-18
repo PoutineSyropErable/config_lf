@@ -328,6 +328,24 @@ map de $trash empty --all
 map p paste
 map x cut
 map y copy
+
+cmd copy-to-clipboard ${{
+    mimetype=$(file --mime-type -b "$fx")
+    wl-copy --type "$mimetype" < "$fx"
+}}
+
+cmd copy-files-path ${{
+    realpath {+} | wl-copy --type text/uri-list
+}}
+cmd copy-files-path-2 ${{
+    printf '%s\0' "$fx" | wl-copy --type 'text/uri-list'
+}}
+
+
+map Yc copy-to-clipboard
+map Yp copy-files-path-2
+
+
 # map <enter> open
 map R reload
 map mf mkfile
