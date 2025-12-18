@@ -1,25 +1,43 @@
-#!/bin/sh
-draw() {
-	bat --color=always ~/.config/lf/empty.txt &
-	kitty +kitten icat --silent --stdin no --transfer-mode file --place "${w}x${h}@${x}x${y}" "$1" </dev/null >/dev/tty
-	exit 1
-}
-
+#!/bin/bash
 file="$1"
 w="$2"
 h="$3"
 x="$4"
 y="$5"
 
-case "$(file -Lb --mime-type "$file")" in
-image/*)
-	draw "$file"
-	;;
-video/*)
-	# vidthumb is from here:
-	# https://raw.githubusercontent.com/duganchen/kitty-pistol-previewer/main/vidthumb
-	draw "$(vidthumb "$file")"
-	;;
-esac
+# Unique identifier for this preview
+PREVIEW_ID="lf-preview-$$"
 
-bat --color=always "$file"
+if [ -n "$TMUX" ]; then
+	# TMUX MODE - Use temporary files
+	case "$(file -Lb --mime-type "$file")" in
+	image/*)
+		tmpfile=$(mktemp "/tmp/${PREVIEW_ID}-XXXXXX.jpg")
+		convert "$file" -resize "${w}x${h}" "$tmpfile"
+		kitty +kitten icat --silent --stdin no --transfer-mode file \
+			--place "${w}x${h}@${x}x${y}" "$tmpfile" </dev/null >/dev/tty
+		echo "$tmpfile" # Pass temp path to cleaner
+		;;
+	video/*)
+		tmpfile=$(mktemp "/tmp/${PREVIEW_ID}-XXXXXX.jpg")
+		vidthumb "$file" "$tmpfile" # Assume vidthumb outputs to file
+		kitty +kitten icat --silent --stdin no --transfer-mode file \
+			--place "${w}x${h}@${x}x${y}" "$tmpfile" </dev/null >/dev/tty
+		echo "$tmpfile"
+		;;
+	*)
+		bat --color=always "$file"
+		;;
+	esac
+else
+	# DIRECT KITTY MODE
+	case "$(file -Lb --mime-type "$file")" in
+	image/* | video/*)
+		kitty +kitten icat --silent --stdin no --transfer-mode file \
+			--place "${w}x${h}@${x}x${y}" "$file" </dev/null >/dev/tty
+		;;
+	*)
+		bat --color=always "$file"
+		;;
+	esac
+fi

@@ -1,6 +1,6 @@
 # interpreter for shell commands
 set shell sh
-map <enter> shell fish
+map <enter> shell zsh
 #Need EZA ! For on select to properly show file info
 
 # set '-eu' options for shell commands
@@ -35,9 +35,13 @@ set cleaner ctpvclear
 &ctpv -s $id
 &ctpvquit $id
 
+# set previewer ~/.config/lf/previewer.sh
+# set cleaner ~/.config/lf/cleaner.sh
+
 
 # Basic Settings
 set hidden true
+set info time
 set ignorecase true
 set icons true
 
@@ -75,19 +79,7 @@ cmd paste_clipboard ${{
 	fish -c "echo -n \"$f\" | c"
 }}
 
-# Custom Functions
-# Custom Functions
-cmd mkdir ${{
-  printf "Directory Name: "
-  read ans
-  mkdir "$ans"
-}}
 
-cmd mkfile ${{
-  printf "File Name: "
-  read ans
-  $EDITOR "$ans"
-}}
 
 cmd create_shortcut ${{
 	printf "link name: "
@@ -124,35 +116,149 @@ cmd unarchive ${{
 
 # Trash bindings
 cmd trash ${{
-  files=$(printf "$fx" | tr '\n' ';')
-  while [ "$files" ]; do
-    file=${files%%;*}
 
-    trash put "$(basename "$file")"
-    if [ "$files" = "$file" ]; then
-      files=''
-    else
-      files="${files#*;}"
-    fi
-  done
+	files=$(printf "$fx" | tr '\n' ';')
+	# printf "" > trash_log.txt
+	while [ "$files" ]; do
+		file=${files%%;*}
+		# printf "$file" >> trash_log.txt
+
+		trash put "$(basename "$file")"
+		if [ "$files" = "$file" ]; then
+		files=''
+		else
+		files="${files#*;}"
+		fi
+	done
 }}
 
 
-cmd open &{{
-    # Determine the MIME type of the file
-    mime_type=$(file --mime-type -Lb "$f")
+cmd open ${{
+	# printf "Open is being called\n" >> open_log.txt
+    nvim_exts=("lua" "c" "asm" "py" "cpp" "h" "sh" "rs" "srt")
 
-    # Check if the file is a text file
-    case "$mime_type" in
-        text/* | inode/x-empty)
-            # Send the file to nvim using lf-remote if it is a text file
-            lf -remote "send $id \$nvim \"\$fx\""
-            ;;
-        *)
-            # Use xdg-open for non-text files
-            xdg-open "$f"
-            ;;
-    esac
+
+    nvim_files=()
+    xdg_files=()
+
+    for file in $fx; do
+        # printf "file = %s\n" "$file" >> open_log.txt
+
+        ext="${file##*.}"
+        ext="${ext,,}"
+
+        opened=false
+
+        for e in "${nvim_exts[@]}"; do
+            if [ "$ext" = "$e" ]; then
+                nvim_files+=("$file")
+                opened=true
+                break
+            fi
+        done
+
+        if [ "$opened" = false ]; then
+            mime_type=$(file --mime-type -Lb "$file")
+            if [[ "$mime_type" == text/* ]] || [ "$mime_type" = "inode/x-empty" ] || [ "$mime_type" = "application/json" ]; then
+                nvim_files+=("$file")
+                opened=true
+            fi
+        fi
+
+        if [ "$opened" = false ]; then
+            xdg_files+=("$file")
+        fi
+    done
+
+	# printf "\nThe neovim files: %s\n" "${nvim_files[*]}" >> open_log.txt
+	# printf "The xdg-open files: %s\n\n" "${xdg_files[*]}" >> open_log.txt
+
+
+    # Open all Neovim files at once
+    if [ ${#nvim_files[@]} -gt 0 ]; then
+		# printf "nvim ${nvim_files[*]}\n" >> open_log.txt
+
+		cmd="send $id \$nvim"
+		for f in "${nvim_files[@]}"; do
+			cmd="$cmd \"$f\""
+		done
+
+		lf -remote "$cmd"
+    fi
+
+
+	# Open all xdg-open files individually in background
+	if [ ${#xdg_files[@]} -gt 0 ]; then
+		# printf "xdg-open files:\n" >> open_log.txt
+		for f in "${xdg_files[@]}"; do
+			# printf "xdg-open %s\n" "$f" >> open_log.txt
+			xdg-open "$f" &
+		done
+	fi
+}}
+
+
+
+
+
+cmd open_before &{{
+	nvim_exts=("lua" "c" "asm" "py" "cpp" "h" "sh" "rs")  # add more if needed
+	printf "" > open_log.txt
+
+
+	files=$(printf "$fx" | tr '\n' ';')
+	while [ "$files" ]; do
+		file=${files%%;*}
+		printf "0: file = $file\n" >>  open_log.txt
+		ext="${file##*.}"
+		printf "1: ext = $ext\n" >> open_log.txt
+		ext="${ext,,}"  # lowercase
+		printf "2: ext = $ext\n" >> open_log.txt
+
+		# First pass: check by extension
+		for e in "${nvim_exts[@]}"; do
+			if [ "$ext" = "$e" ]; then
+				lf -remote "send $id \$nvim \"\$file\""
+				return
+			fi
+		done
+
+		# Second pass: check by MIME type
+		mime_type=$(file --mime-type -Lb "$file")
+		if [[ "$mime_type" == text/* ]] || [ "$mime_type" = "inode/x-empty" ] || [ "$mime_type" = "application/json" ]; then
+			lf -remote "send $id \$nvim \"\$file\""
+			return
+		fi
+
+		# Fallback for everything else
+		xdg-open "$f"
+	done
+}}
+
+
+
+cmd open_no_ext &{{
+    # Determine the MIME type of the file
+	files=$(printf "$fx" | tr '\n' ';')
+		while [ "$files" ]; do
+			file=${files%%;*}
+		mime_type=$(file --mime-type -Lb "$f")
+
+		# Check if the file is a text file
+		# notify-send "It's in mime_type: ($f) in ($mime_type)"
+		case "$mime_type" in
+			text/* | inode/x-empty | application/json)
+				# Send the file to nvim using lf-remote if it is a text file
+				# notify-send -t 2000 "lf remote opening with nvim"
+				lf -remote "send $id \$nvim \"\$fx\""
+				;;
+			*)
+				# Use xdg-open for non-text files
+				# notify-send "xdg opening"
+				xdg-open "$f"
+				;;
+		esac
+	done
 }}
 
 cmd open3 &{{
@@ -161,6 +267,31 @@ cmd open3 &{{
 		*) xdg-open "$f"
 	esac
 }}
+
+
+cmd search_for %{{
+    lf -remote "send $id push /$1<enter>"
+}}
+
+# Custom Functions
+cmd mkdir ${{
+  printf "Directory Name: "
+  read ans
+  mkdir "$ans"
+}}
+
+# Custom Functions
+cmd mkfile ${{
+  printf "File Name: "
+  read ans
+  touch "$ans"
+  # lf -remote "send $id open \$ans"
+  # xdg-open "$ans"
+  lf -remote "send $id search_for \"$ans\""
+  # lf -remote "send $id select \"\$ans\""
+  # $EDITOR "$ans"
+}}
+
 
 cmd on-select &{{
     lf -remote "send $id set statfmt \"$(eza -ld --color=always "$f")\""
@@ -205,16 +336,22 @@ cmd execute-selected ${{
         exit 1
     fi
 
-    # Check if the file is executable
-    if [ ! -x "$f" ]; then
-        echo "File '$f' is not executable" >&2
-        exit 1
-    fi
-	
 	#proccess e key bullshit
 	sleep 0.2
     # Execute the selected file
-    "$f" &
+	case "$f" in
+        *.py)
+            python3 "$f" &
+            ;;
+        *)
+            # Check if the file is executable
+            if [ ! -x "$f" ]; then
+                echo "File '$f' is not executable" >&2
+                exit 1
+            fi
+            "$f" &
+            ;;
+    esac
 }}
 
 
@@ -250,7 +387,9 @@ cmd toggle_exec ${{
   done
 }}
 
-cmd edit_config ${{ nvim ~/.lfrc  }}
+cmd edit_config ${{ 
+	nvim --cmd "autocmd VimEnter * CdHere" ~/.config/lf/lfrc
+	}}
 
 
 cmd change_permissions1 ${{
@@ -289,6 +428,42 @@ cmd change_permissions ${{
 }}
 
 
+
+
+cmd open_in_nvim ${{
+    session_name="$1"
+    script_file="$HOME/.config/nvim/scripts/pythonScripts/open_remote_nvim.py"
+
+    # Prepare the files
+    files=$(printf "$fx" | tr '\n' ' ')
+
+    # If session_name is empty, don't pass --name argument
+    if [ -z "$session_name" ]; then
+        # Run the script without the --name argument
+        "$script_file" $files
+    else
+        # Run the script with the --name argument
+        "$script_file" --name="$session_name" $files
+    fi
+}}
+
+cmd send_to_nvim ${{
+    script_file="$HOME/.config/nvim/scripts/pythonScripts/send_to_nvim.py"
+    session_name="$1"
+    files=$(printf "$fx" | tr '\n' ' ')  # Transform the file list into a space-separated string
+
+    # If session_name is empty, don't pass --name argument
+    if [ -z "$session_name" ]; then
+        # Run the script without the --name argument
+        "$script_file" $files
+    else
+        # Run the script with the --name argument
+        "$script_file" --name="$session_name" $files
+    fi
+}}
+
+
+
 map Z push :z-jump<space>-I<space>
 map zb push :z-jump<space>-b<space>
 map zz push :z-jump<space>
@@ -316,6 +491,7 @@ map i up
 
 # Map 'l' to move right/enter a directory (originally 'l')
 map l open
+map <right> open
 
 
 
@@ -362,31 +538,34 @@ map sp sudo paste
 
 # Movement
 map ch cd ~
-map cc cd ~/.config
-map ck cd ~/.config/kanata
+
 map cD cd ~/Documents
-map ce cd ~/.config/eww
-map ew cd ~/.config/eww
 map cd cd ~/Downloads
 map cp cd ~/Pictures
 map cm cd ~/Music
-#map gr cd ~/repos
 map cv cd ~/Videos
 map cs cd ~/.local/bin
 map ct cd ~/.local/share/Trash/files
 map cj cd /home/francois/MainPython_Virtual_Environment/projects/polyfem2d
 
-map cr cd ~/.config/rofi/applets/bin
 
-map cl cd ~/.config/lf
-map cP cd ~/.config/polybar.old
+map cc cd ~/.config
+map ce cd ~/.config/eww
+map ck cd ~/.config/kanata
 map cH cd ~/.config/hypr
+map cl cd ~/.config/lf
+map cn cd ~/.config/nvim
+map cV cd ~/.config/vim
+map cP cd ~/.config/polybar.old
+map cr cd ~/.config/rofi/applets/bin
 map cw cd ~/.config/waybar
+map cz cd ~/.config/zsh
 
 
 cmd open_dir_nvim  ${{ 
     nvim .
 }}
+map eb !firefox "$f" &
 map ef !thunar "$f" &
 map cf !thunar "$f" &
 map ev open_dir_nvim
@@ -407,8 +586,30 @@ map ep change_permissions
 
 map on !nvim "$f"
 map oN !nvim "."
-map ov !codium "$f"
-map oV !codium "."
+
+# Keybinding for `rvd` - open files in Neovim with the default session (no session passed)
+map od open_in_nvim "" 
+# session name = 1, 2 or 3
+map o1 open_in_nvim "1"
+map o2 open_in_nvim "2"
+map o3 open_in_nvim "3"
+
+
+# Keybinding for `svd` - send files to Neovim with the default session (no session passed)
+map sd send_to_nvim ""
+map se send_to_nvim "Editor"
+map s1 send_to_nvim "1"
+map s2 send_to_nvim "2"
+map s3 send_to_nvim "3"
+map osd send_to_nvim ""
+map os1 send_to_nvim "1"
+map os2 send_to_nvim "2"
+map os3 send_to_nvim "3"
+
+
+
+map oc !codium "$f"
+map oc !codium "."
 map ow !dbus-send --session --dest=org.xfce.Thunar --type=method_call --print-reply --reply-timeout=5000 /org/xfce/FileManager org.xfce.FileManager.Open --string "$f" --string "other"
 map om !mpv "$f"
 
@@ -417,3 +618,20 @@ map oip !pinta "$f"
 
 map of !thunar "$f" &
 map mp !mpc_playsong.sh "$f"
+
+
+# === sorts 
+# reverse sorts
+# Toggle reverse sort order
+
+
+
+
+
+map sR   set reverse!
+map sa   :{{ set sortby atime; set info atime; }}
+map sc   :{{ set sortby ctime; set info ctime; }}
+map sx   :{{ set sortby ext; set info time; }}
+map sn   :{{ set sortby natural; set info time; }}
+map ss   :{{ set sortby size; set info size; }}
+map st   :{{ set sortby time; set info time; }}
