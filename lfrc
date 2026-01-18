@@ -106,7 +106,7 @@ cmd unarchive ${{
       *.zip) unzip "$f" ;;
       *.rar) unrar x "$f" ;;
       *.tar.gz) tar -xzvf "$f" ;;
-      *.tar.xz) tar -xzvf "$f" ;;
+      *.tar.xz) tar -xJvf "$f" ;;
       *.tar.bz2) tar -xjvf "$f" ;;
       *.tar) tar -xvf "$f" ;;
       *.7z) 7z e "$f" ;;
@@ -570,6 +570,14 @@ map ef !thunar "$f" &
 map cf !thunar "$f" &
 map ev open_dir_nvim
 
+cmd object_dump ${{
+	file="$f"
+    base="${file%.*}"
+    objdump -D -h -M intel "$file" > "${base}.dump"
+}}
+
+map od object_dump
+
 
 
 # Bind the custom command to the 'e' key
@@ -588,7 +596,7 @@ map on !nvim "$f"
 map oN !nvim "."
 
 # Keybinding for `rvd` - open files in Neovim with the default session (no session passed)
-map od open_in_nvim "" 
+map or open_in_nvim "" 
 # session name = 1, 2 or 3
 map o1 open_in_nvim "1"
 map o2 open_in_nvim "2"
@@ -596,7 +604,7 @@ map o3 open_in_nvim "3"
 
 
 # Keybinding for `svd` - send files to Neovim with the default session (no session passed)
-map sd send_to_nvim ""
+map sr send_to_nvim ""
 map se send_to_nvim "Editor"
 map s1 send_to_nvim "1"
 map s2 send_to_nvim "2"
